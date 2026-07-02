@@ -101,6 +101,39 @@ body {
   border-color: var(--title-color);
 }
 
+.skin-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.skin-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--label-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#skin-select {
+  background: var(--board-bg);
+  color: var(--fg);
+  border: 1px solid var(--board-border);
+  border-radius: 6px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+#skin-select:hover,
+#skin-select:focus {
+  border-color: var(--title-color);
+  outline: none;
+}
+
 .game-container {
   display: flex;
   gap: 20px;
