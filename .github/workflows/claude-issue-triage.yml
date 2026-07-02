@@ -59,6 +59,12 @@ jobs:
                - Funciones/archivos candidatos a modificar para resolverlo.
                - Cualquier ambigüedad o información que falte para implementarlo.
 
+               El comentario debe estar escrito en formato Markdown válido
+               que GitHub pueda renderizar correctamente (encabezados con
+               `#`/`##`, listas con `-`, `` `código en línea` `` para nombres
+               de funciones/archivos, bloques de código con triple backtick
+               si hace falta, etc.).
+
             4. Antes de comentar, revisa si ya existe un comentario previo de
                diagnóstico tuyo en este issue (busca uno que empiece con
                "## Diagnóstico automático"). Si existe y el issue fue editado,
