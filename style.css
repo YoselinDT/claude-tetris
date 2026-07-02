@@ -24,6 +24,13 @@
   --restart-bg: #7aa2f7;
   --restart-text: #0f0f17;
   --restart-hover: #9bbdff;
+  --highscore-current-bg: rgba(122, 162, 247, 0.18);
+  --highscore-current-text: #7aa2f7;
+  --input-bg: #1a1a25;
+  --input-border: #3a3a5a;
+  --secondary-btn-bg: transparent;
+  --secondary-btn-border: #3a3a5a;
+  --secondary-btn-text: #888;
 }
 
 body.light {
@@ -46,6 +53,13 @@ body.light {
   --restart-bg: #3b5bdb;
   --restart-text: #ffffff;
   --restart-hover: #5b7bf0;
+  --highscore-current-bg: rgba(59, 91, 219, 0.12);
+  --highscore-current-text: #3b5bdb;
+  --input-bg: #ffffff;
+  --input-border: #c3c6da;
+  --secondary-btn-bg: transparent;
+  --secondary-btn-border: #c3c6da;
+  --secondary-btn-text: #6b6b85;
 }
 
 body {
@@ -200,6 +214,10 @@ kbd {
   flex-direction: column;
   gap: 12px;
   align-items: center;
+  max-width: 260px;
+  max-height: 90%;
+  overflow-y: auto;
+  padding: 8px;
 }
 
 #overlay-title {
@@ -215,7 +233,8 @@ kbd {
   color: var(--overlay-score);
 }
 
-#restart-btn {
+#restart-btn,
+#start-play-btn {
   margin-top: 8px;
   background: var(--restart-bg);
   color: var(--restart-text);
@@ -229,6 +248,150 @@ kbd {
   transition: background 0.15s;
 }
 
-#restart-btn:hover {
+#restart-btn:hover,
+#start-play-btn:hover {
   background: var(--restart-hover);
+}
+
+#start-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--title-color);
+}
+
+/* ---- Tabla de récords ---- */
+.highscore-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.highscore-panel.hidden {
+  display: none;
+}
+
+.highscore-panel h2 {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--label-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.highscore-list {
+  list-style: decimal;
+  list-style-position: inside;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.highscore-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--fg);
+}
+
+.highscore-list li.highscore-empty {
+  display: block;
+  color: var(--control-text);
+  font-size: 12px;
+  text-align: center;
+}
+
+.highscore-list li.highscore-current {
+  background: var(--highscore-current-bg);
+  color: var(--highscore-current-text);
+  font-weight: 700;
+}
+
+.highscore-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--control-text);
+}
+
+.stats-line strong {
+  color: var(--value-color);
+}
+
+/* ---- Formulario de nombre para récord ---- */
+.highscore-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.highscore-form.hidden {
+  display: none;
+}
+
+.highscore-form-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+#highscore-name-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+#save-highscore-btn {
+  background: var(--restart-bg);
+  color: var(--restart-text);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#save-highscore-btn:hover {
+  background: var(--restart-hover);
+}
+
+.secondary-btn {
+  background: var(--secondary-btn-bg);
+  color: var(--secondary-btn-text);
+  border: 1px solid var(--secondary-btn-border);
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.secondary-btn:hover {
+  border-color: var(--title-color);
+  color: var(--title-color);
 }
