@@ -1,0 +1,70 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    if: github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*)"'
+
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio
+            (Tetris en JavaScript vanilla, todo el juego vive en `game.js`; ver
+            CLAUDE.md para la arquitectura: modelo de tablero, `collide()`,
+            `loop()`, `lockPiece()`, `clearLines()`, `draw()`, manejo de input, etc.)
+            y realiza dos tareas: etiquetarlo y diagnosticarlo.
+
+            Pasos:
+
+            1. Lee el título y cuerpo del issue con:
+               `gh issue view ${{ github.event.issue.number }} --json title,body,labels,comments`
+
+            2. Lista los labels existentes del repositorio con `gh label list`.
+               Elige los que apliquen (ej. bug, enhancement, question,
+               documentation). Si ninguno describe bien el issue, crea uno nuevo
+               y descriptivo con `gh label create` (por ejemplo `area:rendering`,
+               `area:input`, `area:scoring`, `area:collision`) y aplícalo junto a
+               los demás relevantes. Aplica los labels con:
+               `gh issue edit ${{ github.event.issue.number }} --add-label "..."`
+               No elimines labels que ya estén puestos salvo que sean claramente
+               incorrectos.
+
+            3. Redacta en español un **diagnóstico general** del problema,
+               orientado a preparar la implementación posterior (NO escribas
+               código, solo diagnostica). Incluye:
+               - Resumen del problema/petición.
+               - Qué parte del juego probablemente involucra (referencia
+                 funciones/archivos concretos de `game.js` según corresponda).
+               - Causa probable o consideraciones de diseño relevantes.
+               - Funciones/archivos candidatos a modificar para resolverlo.
+               - Cualquier ambigüedad o información que falte para implementarlo.
+
+            4. Antes de comentar, revisa si ya existe un comentario previo de
+               diagnóstico tuyo en este issue (busca uno que empiece con
+               "## Diagnóstico automático"). Si existe y el issue fue editado,
+               publica un nuevo comentario actualizado en vez de repetir uno
+               idéntico, dejando claro que es una actualización tras la edición.
+               Si no existe, publica el diagnóstico como comentario nuevo con:
+               `gh issue comment ${{ github.event.issue.number }} --body "..."`
+               El comentario debe empezar con el encabezado
+               `## Diagnóstico automático`.
