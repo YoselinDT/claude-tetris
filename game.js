@@ -30,6 +30,40 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+// Paletas de colores alternativas por skin (paralelas a COLORS: índice 0 = null).
+const NEON_COLORS = [
+  null,
+  '#00fff2', // I
+  '#faff00', // O
+  '#ff00e6', // T
+  '#39ff14', // S
+  '#ff3131', // Z
+  '#00aeff', // J
+  '#ff9500', // L
+  '#e0faff', // Tuerca
+];
+
+const PASTEL_COLORS = [
+  null,
+  '#aee3e0', // I
+  '#fdf1a8', // O
+  '#d9b8e8', // T
+  '#bfe6c0', // S
+  '#f4b6b0', // Z
+  '#b8d4f0', // J
+  '#f9d4a3', // L
+  '#d8dce3', // Tuerca
+];
+
+const SKINS = {
+  retro: { label: 'Retro', colors: COLORS, boardBg: null, glow: false, rounded: false, texture: false },
+  neon: { label: 'Neon', colors: NEON_COLORS, boardBg: '#05050a', glow: true, rounded: false, texture: false },
+  pastel: { label: 'Pastel', colors: PASTEL_COLORS, boardBg: null, glow: false, rounded: true, texture: false },
+  pixel: { label: 'Pixel art', colors: COLORS, boardBg: null, glow: false, rounded: false, texture: true },
+};
+
+const SKIN_KEY = 'tetris-skin';
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -42,10 +76,12 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggle = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 const THEME_KEY = 'tetris-theme';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let currentSkin = 'retro';
 
 function applyTheme(theme) {
   document.body.classList.toggle('light', theme === 'light');
@@ -61,6 +97,24 @@ function toggleTheme() {
 
 applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 themeToggle.addEventListener('click', toggleTheme);
+
+function applySkin(skin) {
+  currentSkin = SKINS[skin] ? skin : 'retro';
+  if (skinSelect) skinSelect.value = currentSkin;
+  // Solo redibuja si el juego ya está inicializado (evita errores al cargar).
+  if (current && next) {
+    draw();
+    drawNext();
+  }
+}
+
+function setSkin(skin) {
+  localStorage.setItem(SKIN_KEY, skin);
+  applySkin(skin);
+}
+
+applySkin(localStorage.getItem(SKIN_KEY) || 'retro');
+if (skinSelect) skinSelect.addEventListener('change', e => setSkin(e.target.value));
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -177,16 +231,87 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
+// Dibuja el contorno de un rectángulo con esquinas redondeadas (sin fill/stroke).
+// Usa ctx.roundRect() si el entorno lo soporta, o un fallback manual con arcTo.
+function tracePath(context, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  context.beginPath();
+  if (typeof context.roundRect === 'function') {
+    context.roundRect(x, y, w, h, r);
+  } else {
+    context.moveTo(x + r, y);
+    context.arcTo(x + w, y, x + w, y + h, r);
+    context.arcTo(x + w, y + h, x, y + h, r);
+    context.arcTo(x, y + h, x, y, r);
+    context.arcTo(x, y, x + w, y, r);
+    context.closePath();
+  }
+}
+
+// Textura tipo pixel-art: patrón de sub-celdas en damero + borde biselado.
+function drawPixelTexture(context, px, py, s) {
+  const sub = Math.max(2, Math.floor(s / 5));
+  const cells = Math.ceil(s / sub);
+  context.fillStyle = 'rgba(0,0,0,0.15)';
+  for (let ry = 0; ry < cells; ry++) {
+    for (let rx = 0; rx < cells; rx++) {
+      if ((rx + ry) % 2 === 0) continue;
+      const sx = px + rx * sub;
+      const sy = py + ry * sub;
+      const sw = Math.min(sub, px + s - sx);
+      const sh = Math.min(sub, py + s - sy);
+      if (sw > 0 && sh > 0) context.fillRect(sx, sy, sw, sh);
+    }
+  }
+  context.fillStyle = 'rgba(255,255,255,0.22)';
+  context.fillRect(px, py, s, 2);
+  context.fillRect(px, py, 2, s);
+  context.fillStyle = 'rgba(0,0,0,0.25)';
+  context.fillRect(px, py + s - 2, s, 2);
+  context.fillRect(px + s - 2, py, 2, s);
+}
+
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
+  const skin = SKINS[currentSkin] || SKINS.retro;
+  const color = skin.colors[colorIndex] || COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const s = size - 2;
+
+  context.save();
   context.globalAlpha = alpha ?? 1;
+
+  if (skin.glow) {
+    context.shadowBlur = size * 0.6;
+    context.shadowColor = color;
+  }
+
   context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  if (skin.rounded) {
+    tracePath(context, px, py, s, s, size * 0.25);
+    context.fill();
+  } else {
+    context.fillRect(px, py, s, s);
+  }
+
+  // A partir de aquí el resplandor no debe afectar al detalle superficial.
+  context.shadowBlur = 0;
+
+  if (skin.texture) {
+    drawPixelTexture(context, px, py, s);
+  } else {
+    // highlight
+    context.fillStyle = 'rgba(255,255,255,0.12)';
+    if (skin.rounded) {
+      tracePath(context, px, py, s, 4, size * 0.15);
+      context.fill();
+    } else {
+      context.fillRect(px, py, s, 4);
+    }
+  }
+
+  context.restore();
 }
 
 function drawGrid() {
@@ -208,6 +333,11 @@ function drawGrid() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const skin = SKINS[currentSkin] || SKINS.retro;
+  if (skin.boardBg) {
+    ctx.fillStyle = skin.boardBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   drawGrid();
 
   // board
@@ -231,6 +361,11 @@ function draw() {
 function drawNext() {
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  const skin = SKINS[currentSkin] || SKINS.retro;
+  if (skin.boardBg) {
+    nextCtx.fillStyle = skin.boardBg;
+    nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  }
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
